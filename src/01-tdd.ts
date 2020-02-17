@@ -12,6 +12,7 @@ const wrong: AsyncData<string> = {
   error: new Error('Failed to fetch'),
 }
 
+// discriminated union (a.k.a. algebraic data type)
 type RemoteData<D> =
   | {tag: 'idle'}
   | {tag: 'loading'}

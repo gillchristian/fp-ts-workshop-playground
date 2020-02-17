@@ -1,5 +1,15 @@
-import {of, head, last, tail, concat} from 'fp-ts/lib/NonEmptyArray'
+import {
+  of,
+  head,
+  last,
+  tail,
+  concat,
+  map,
+  reduce,
+} from 'fp-ts/lib/NonEmptyArray'
 
+// NonEmptyArray a = [a]
+//
 // of :: a -> NonEmptyArray a
 //
 // head :: NonEmptyArray a -> a
