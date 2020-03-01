@@ -24,6 +24,11 @@ const alwaysNull: Lazy<null> = () => null
 const isSrgjan: Refinement<string, 'Srgjan'> = (str): str is 'Srgjan' =>
   str === 'Srgjan'
 
+// /////////////////////////////////////////////////////////////////////////////
+
+const name = 'Srgjan'
+const nameConst = isSrgjan(name) ? name : 'Srgjan'
+
 interface User {
   name: string
   lastName: string
@@ -41,9 +46,6 @@ const userFormatRegistered = (user: User) =>
     day: 'numeric',
   })
 
-// ---
-
-const name = 'Srgjan'
 const users = [
   {
     name: 'John',
@@ -83,10 +85,59 @@ interface CatawikiUser extends User {
   email: string
 }
 
-// Exercises
+// Exercises ///////////////////////////////////////////////////////////////////
 
 // 1. List of Catawiki employees (admins) with their emails (name's initial + last name + @catawiki.com)
 // 2. Count the amount of lots
 // 3. For user's profile pretty print name + date -> 'Charles Easton (pro seller), joined ...
 //                                                -> 'Wanda Vang (catawiki employee), joined ...
-// 4. Play around with pipe & flow
+// 4. Play around with pipe & flow, creat and compose functions
+
+const add = (a: number, b: number) => a + b
+const firstChar = (name: string) => name.charAt(0)
+const initial = flow(firstChar, toLower)
+const toLocaleDateString = (date: string) =>
+  new Date(date).toLocaleDateString('en-gb', {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  })
+const join = (what: string) => (xs: string[]) => xs.join(what)
+
+const isAdmin = ({admin}: {admin: boolean}) => admin
+const userEmail = ({name, lastName}: {name: string; lastName: string}) =>
+  `${initial(name)}.${lastName.toLowerCase()}@catawiki`
+
+const cataUser = (user: User): CatawikiUser => ({
+  ...user,
+  email: userEmail(user),
+})
+
+const lots = ({lots}: {lots: number}) => lots
+
+const formatRegistrationDate = ({registered, ...rest}: User) => ({
+  ...rest,
+  registered: toLocaleDateString(registered),
+})
+
+const profileIntroParts = ({name, lastName, isPro, admin, registered}: User) =>
+  admin
+    ? [name, lastName, '(Catawiki employee). Joined', registered]
+    : isPro
+    ? [name, lastName, '(pro seller). Joined', registered]
+    : [name, `${lastName}.`, 'Joined', registered]
+
+// Solutions
+
+const one = flow(filter(isAdmin as Predicate<User>), map(cataUser))
+
+const two = flow(map(lots), reduce(0, add))
+
+const three = map(flow(formatRegistrationDate, profileIntroParts, join(' ')))
+
+console.log('With email:\n', one(users), '\n')
+
+console.log('Lots count:', two(users), '\n')
+
+console.log('Profiles:\n', three(users))
