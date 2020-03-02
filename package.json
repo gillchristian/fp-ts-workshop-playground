@@ -6,6 +6,8 @@
     "watch": "tsc --noEmit --watch"
   },
   "dependencies": {
+    "@types/assert-plus": "^1.0.4",
+    "assert-plus": "^1.0.0",
     "fp-ts": "^2.5.0",
     "fp-ts-contrib": "^0.1.12",
     "hyper-ts": "^0.5.3",

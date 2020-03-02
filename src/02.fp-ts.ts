@@ -1,3 +1,4 @@
+import * as assert from 'assert-plus'
 import {
   flow,
   identity,
@@ -93,51 +94,52 @@ interface CatawikiUser extends User {
 //                                                -> 'Wanda Vang (catawiki employee), joined ...
 // 4. Play around with pipe & flow, creat and compose functions
 
-const add = (a: number, b: number) => a + b
-const firstChar = (name: string) => name.charAt(0)
-const initial = flow(firstChar, toLower)
-const toLocaleDateString = (date: string) =>
-  new Date(date).toLocaleDateString('en-gb', {
-    weekday: 'long',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  })
-const join = (what: string) => (xs: string[]) => xs.join(what)
+// Solutions ///////////////////////////////////////////////////////////////////
 
-const isAdmin = ({admin}: {admin: boolean}) => admin
-const userEmail = ({name, lastName}: {name: string; lastName: string}) =>
-  `${initial(name)}.${lastName.toLowerCase()}@catawiki`
+// 1.
 
-const cataUser = (user: User): CatawikiUser => ({
-  ...user,
-  email: userEmail(user),
-})
+const one = (_users: User[]) => []
 
-const lots = ({lots}: {lots: number}) => lots
+console.log('Exercise 1) -> Catawiki users with email')
 
-const formatRegistrationDate = ({registered, ...rest}: User) => ({
-  ...rest,
-  registered: toLocaleDateString(registered),
-})
+assert.strictEqual(one(users), [
+  {
+    name: 'John',
+    lastName: 'Doe',
+    admin: true,
+    lots: 0,
+    isPro: false,
+    registered: '2010-02-21',
+    email: 'j.doe@catawiki',
+  },
+  {
+    name: 'Wanda',
+    lastName: 'Vang',
+    admin: true,
+    lots: 3,
+    isPro: false,
+    registered: '2019-08-14',
+    email: 'w.vang@catawiki',
+  },
+])
 
-const profileIntroParts = ({name, lastName, isPro, admin, registered}: User) =>
-  admin
-    ? [name, lastName, '(Catawiki employee). Joined', registered]
-    : isPro
-    ? [name, lastName, '(pro seller). Joined', registered]
-    : [name, `${lastName}.`, 'Joined', registered]
+// 2.
 
-// Solutions
+const two = (_users: User[]) => 0
 
-const one = flow(filter(isAdmin as Predicate<User>), map(cataUser))
+console.log('Exercise 2) -> lots count')
 
-const two = flow(map(lots), reduce(0, add))
+assert.strictEqual(two(users), 15)
 
-const three = map(flow(formatRegistrationDate, profileIntroParts, join(' ')))
+// 3.
 
-console.log('With email:\n', one(users), '\n')
+const three = (_users: User[]) => []
 
-console.log('Lots count:', two(users), '\n')
+console.log('Exercise 3) -> Users profile description')
 
-console.log('Profiles:\n', three(users))
+assert.deepEqual(three(users), [
+  'John Doe (Catawiki employee). Joined Sunday, February 21, 2010',
+  'Charles Easton (pro seller). Joined Monday, June 18, 2018',
+  'Kimora Simmons. Joined Friday, January 3, 2020',
+  'Wanda Vang (Catawiki employee). Joined Wednesday, August 14, 2019',
+])

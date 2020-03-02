@@ -1,5 +1,7 @@
+import * as assert from 'assert-plus'
 import {pipe} from 'fp-ts/lib/pipeable'
 import {
+  isLeft,
   right,
   left,
   map,
@@ -14,12 +16,12 @@ import {
   Either,
 } from 'fp-ts/lib/Either'
 
-import {Expiry} from './04.io-ts'
+import {Expiry, PaymentMethod} from './04.io-ts'
 
 // Error handling in a functional way.
 //
-// Either is the box that allows us to build pipelines where we handle errors
-// declaratively (short circuit in case of errors)
+// Either is the "Box" that allows us to build pipelines where we handle errors
+// declaratively (short circuit in case of errors, but "continue as if nothing happened")
 //
 // As we saw in the previous step, io-ts uses Either to provide the result of
 // decoding which can either (pun intended) fail with some error or succeed
@@ -27,12 +29,16 @@ import {Expiry} from './04.io-ts'
 // All the operations (like map & chain) are "right biased" meaing they won't
 // change the value if it were to be a left
 //
-// https://gcanti.github.io/fp-ts/modules/Either.ts.html
+// ^^^ that's what "continue as if nothing happened" means
+//
+// fp-ts docs: https://gcanti.github.io/fp-ts/modules/Either.ts.html
 
 interface User {
   name: string
 }
+
 const getUserName = ({name}: User) => name
+
 const isUser = (payload: any): payload is User =>
   typeof payload === 'object' &&
   payload !== null &&
@@ -75,7 +81,7 @@ const y = pipe('{"name": "Mark"}', parse, chain(validateUser))
 //
 // as the name implies, allows to transform the left side (instead of the right one)
 
-const leftErrorMessage = mapLeft((e: Error) => e.message)
+const errorToMessage = mapLeft((e: Error) => e.message)
 
 // getOrElse
 //
@@ -91,7 +97,7 @@ console.log(extract(y))
 
 pipe(
   y,
-  leftErrorMessage,
+  errorToMessage,
   fold(
     msg => {
       console.log('The error was:', msg)
@@ -144,13 +150,24 @@ const eitherLowRandom = tryCatch(
 // 1. Implement a version of parseInt that returns a right on valid number
 //    and a left if the result is not a number
 //    Answer is in the fp-ts docs, don't cheat ;)
+const safeParseInt = (_: unknown): Either<string, number> =>
+  left('not a number')
+
+assert.deepEqual(safeParseInt('123'), right(123))
+assert.deepEqual(safeParseInt('foo'), left('not a number'))
 
 // 2. Implement a safe version of JSON.stringify that doesn't throw on cyclick
 //    values but instead returns a left
 //    NOTE: fp-ts/lib/Either already provides such function, this is for
 //    learning purposes :)
 
+const stringifyJSON = (_: unknown): Either<string, string> =>
+  left('cannot stringify')
+
 const failsToStringify = {foo: this}
+
+assert.deepEqual(stringifyJSON({}), right('{}'))
+assert.deepEqual(stringifyJSON(failsToStringify), left('cannot stringify'))
 
 // 3. Using the decoder from the previous 'chapter', implement a function that:
 //    - safely parses JSON
@@ -171,6 +188,9 @@ const isValidExpiry = (expiry: Expiry): Either<Error, Expiry> => {
   return right(expiry)
 }
 
+const validateInput = (_input: string): Either<Error, PaymentMethod> =>
+  left(new Error('not implement'))
+
 const input = {
   invalidJSON:
     '{type":"credit_card","owner":"John Don","number":"347954046610242","expiry":{"month":1,"year":2023}}',
@@ -182,3 +202,17 @@ const input = {
     '{"type":"credit_card","owner":"John Don","number":"347954046610242","expiry":{"month":1,"year":2023}}',
   validPaypal: '{"type":"paypal","email":"foo@bar.com"}',
 }
+
+const results = {
+  invalidJSON: validateInput(input.invalidJSON),
+  invalidPaymentMethod: validateInput(input.invalidPaymentMethod),
+  invalidExpiry: validateInput(input.invalidExpiry),
+  validCreditCard: validateInput(input.validCreditCard),
+  validPaypal: validateInput(input.validPaypal),
+}
+
+assert.deepEqual(isLeft(results.invalidJSON), true)
+assert.deepEqual(isLeft(results.invalidPaymentMethod), true)
+assert.deepEqual(isLeft(results.invalidExpiry), true)
+assert.deepEqual(isLeft(results.validCreditCard), false)
+assert.deepEqual(isLeft(results.validPaypal), false)

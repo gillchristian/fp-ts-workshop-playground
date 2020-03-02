@@ -1,36 +1,25 @@
 import * as t from 'io-ts'
-import {flow} from 'fp-ts/lib/function'
-import {getShow} from 'fp-ts/lib/Either'
 
-// showResult.show: stringifies the result of decoding
-const showResult = getShow(
-  {
-    show: (e: t.Errors) => `${e.length} error${e.length === 1 ? '' : 's'}`,
-  },
-  {
-    // swap thise lines to print the result in pretty or not JSON encoding
-    // show: (v: any) => JSON.stringify(v),
-    show: (v: any) => JSON.stringify(v, null, 2),
-  },
-)
-
-// print: stringifies a decoding result and prints to the terminal
-const print = flow(showResult.show, console.log)
+import {print} from './utils'
 
 // Examples:
 
-print(t.number.decode(123))
-print(t.number.decode('123'))
+const Str = t.number
 
-print(t.string.decode('123'))
+print(Str.decode('foo'))
 
 print(t.boolean.decode(true))
 
-print(t.array(t.boolean).decode([true, false]))
+print(t.array(t.number).decode([321, 123]))
+
+// what would be the result of these two?
+//
+// print(t.number.decode(123))
+// print(t.number.decode('123'))
 
 // Exercises ///////////////////////////////////////////////////////////////////
 
-// We'll implement the codecs (decoder/encoder) for different API ressponses
+// We'll implement the codecs (decoder/encoder) for different API responses
 // Using the following built in codecs should be enough
 
 t.string
@@ -87,7 +76,7 @@ export interface Expiry {
   year: number // should be positive number but for brevity we use number
 }
 
-type PaymentMethod =
+export type PaymentMethod =
   | {type: 'credit_card'; owner: string; number: string; expiry: Expiry}
   | {type: 'iban'; owner: string; iban: string}
   | {type: 'bank'; account: string}
