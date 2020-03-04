@@ -13,7 +13,7 @@ import {
   Endomorphism,
 } from 'fp-ts/lib/function'
 import {pipe} from 'fp-ts/lib/pipeable'
-import {map, reduce, filter, array} from 'fp-ts/lib/Array'
+import {map, reduce, filter} from 'fp-ts/lib/Array'
 
 const toLower = (str: string) => str.toLowerCase()
 const exclaim: Endomorphism<string> = str => `${str}!`
@@ -82,27 +82,29 @@ const users = [
   },
 ]
 
+// Exercises ///////////////////////////////////////////////////////////////////
+
+// 1. List of Catawiki employees (admins) with their emails (name's initial + last name + @catawiki.com)
 interface CatawikiUser extends User {
   email: string
 }
 
-// Exercises ///////////////////////////////////////////////////////////////////
-
-// 1. List of Catawiki employees (admins) with their emails (name's initial + last name + @catawiki.com)
 // 2. Count the amount of lots
+
 // 3. For user's profile pretty print name + date -> 'Charles Easton (pro seller), joined ...
 //                                                -> 'Wanda Vang (catawiki employee), joined ...
+
 // 4. Play around with pipe & flow, creat and compose functions
 
 // Solutions ///////////////////////////////////////////////////////////////////
 
 // 1.
 
-const one = (_users: User[]) => []
+const one = (_users: User[]): CatawikiUser[] => []
 
 console.log('Exercise 1) -> Catawiki users with email')
 
-assert.strictEqual(one(users), [
+assert.deepEqual(one(users), [
   {
     name: 'John',
     lastName: 'Doe',
@@ -125,7 +127,7 @@ assert.strictEqual(one(users), [
 
 // 2.
 
-const two = (_users: User[]) => 0
+const two = (_users: User[]): number => 0
 
 console.log('Exercise 2) -> lots count')
 
@@ -133,7 +135,7 @@ assert.strictEqual(two(users), 15)
 
 // 3.
 
-const three = (_users: User[]) => []
+const three = (_users: User[]): string[] => []
 
 console.log('Exercise 3) -> Users profile description')
 
@@ -143,3 +145,5 @@ assert.deepEqual(three(users), [
   'Kimora Simmons. Joined Friday, January 3, 2020',
   'Wanda Vang (Catawiki employee). Joined Wednesday, August 14, 2019',
 ])
+
+console.log('All pass!!!')
