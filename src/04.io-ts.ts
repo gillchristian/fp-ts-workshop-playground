@@ -4,9 +4,11 @@ import {print} from './utils'
 
 // Examples:
 
-const Str = t.number
+const Num = t.number
 
-print(Str.decode('foo'))
+const result = Num.decode('123')
+
+print(result)
 
 print(t.boolean.decode(true))
 
@@ -31,6 +33,14 @@ t.array
 t.union
 t.keyof
 t.interface
+
+const AB = t.keyof({a: null, b: null})
+type AB = t.TypeOf<typeof AB> // 'a' | 'b'
+
+const WithName = t.interface({
+  name: t.string,
+})
+type WithName = t.TypeOf<typeof WithName> // type Name = { name: string }
 
 // 1. Implement the User interface as an io-ts codec
 
