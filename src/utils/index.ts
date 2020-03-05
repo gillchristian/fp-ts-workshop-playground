@@ -16,3 +16,5 @@ const showResult = getShow(
 
 // print: stringifies a decoding result and prints to the terminal
 export const print = flow(showResult.show, console.log)
+
+export type Equals<A, B extends A> = 'passes'
