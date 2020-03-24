@@ -34,19 +34,19 @@ t.union
 t.keyof
 t.interface
 
-const AB = t.keyof({a: null, b: null})
-type AB = t.TypeOf<typeof AB> // 'a' | 'b'
+export const AB = t.keyof({a: null, b: null})
+export type AB = t.TypeOf<typeof AB> // 'a' | 'b'
 
 const WithName = t.interface({
   name: t.string,
 })
 type WithName = t.TypeOf<typeof WithName> // type Name = { name: string }
 
-interface WithNameExpected {
-  name: string;
+interface WithName_Expected {
+  name: string
 }
 
-type Test_WithName = Equals<WithNameExpected, WithName>
+export type Test_WithName = Equals<WithName_Expected, WithName>
 
 // Exercises
 //
@@ -60,11 +60,11 @@ type Test_WithName = Equals<WithNameExpected, WithName>
 //
 // $ yarn ts-node src/04.io-ts
 
-// 1. Implement the User (to match UserExpected) interface as an io-ts codec
+// 1. Implement the User (to match User_Expected) interface as an io-ts codec
 const User = t.interface({})
 type User = t.TypeOf<typeof User>
 
-interface UserExpected {
+interface User_Expected {
   id: number
   name: string
   lastName: string
@@ -72,9 +72,9 @@ interface UserExpected {
   admin: boolean
 }
 
-type Test_User = Equals<UserExpected, User> 
+export type Test_User = Equals<User_Expected, User>
 
-// 2. Implement the Lot (to match LotExpected) interface as an io-ts codec
+// 2. Implement the Lot (to match Lot_Expected) interface as an io-ts codec
 
 const Lot = t.interface({})
 type Lot = t.TypeOf<typeof Lot>
@@ -85,7 +85,7 @@ interface Auction {
   experts: User[]
 }
 
-interface LotExpected {
+interface Lot_Expected {
   id: string | number
   title: string
   category: number
@@ -93,13 +93,46 @@ interface LotExpected {
   thumbnail?: string
 }
 
-type Test_Lot = Equals<LotExpected, Lot> 
+export type Test_Lot = Equals<Lot_Expected, Lot>
 
-// 3. Implement the Feedback (to match Expected) interface as an io-ts codec
+// Hint: optional values can be achieved in two ways:
+//
+// 1) Union wiht undefined
+//
+// t.interface({
+//   name: t.string,
+//   isAdmin: t.union([t.boolean, t.undefined]),
+// })
+//
+// Result:
+//
+// {
+//   name: string,
+//   isAdmin: boolean | undefined,
+// }
+//
+// Pros: shorter
+// Cons: result is not really optional but an union
+//
+// 2) Intersection of t.interface and t.partial
+//
+// t.intersection([
+//   t.interface({ name: t.string }),
+//   t.partial({ isAdmin: t.boolean }),
+// ])
+//
+// Result:
+//
+// { name: string } & { isAdmin?: boolean }
+//
+// Pros: properties are really optional
+// Cons: much more verbose, result is an interface (not a problem tho)
+
+// 3. Implement the Feedback (to match Feedback_Expected) interface as an io-ts codec
 const Feedback = t.interface({})
 type Feedback = t.TypeOf<typeof Feedback>
 
-interface FeedbackExpected {
+interface Feedback_Expected {
   orderReference: string | number
   seller: User
   buyer: User
@@ -110,9 +143,9 @@ interface FeedbackExpected {
   }
 }
 
-type Test_Feedback = Equals<FeedbackExpected, Feedback> 
+export type Test_Feedback = Equals<Feedback_Expected, Feedback>
 
-// 4. Implement the PaymentMethod type (to match PaymentMethodExpected) as an io-ts codec
+// 4. Implement the PaymentMethod type (to match PaymentMethod_Expected) as an io-ts codec
 const PaymentMethod = t.interface({})
 type PaymentMethod = t.TypeOf<typeof PaymentMethod>
 
@@ -121,10 +154,10 @@ export interface Expiry {
   year: number // should be positive number but for brevity we use number
 }
 
-export type PaymentMethodExpected =
+export type PaymentMethod_Expected =
   | {type: 'credit_card'; owner: string; number: string; expiry: Expiry}
   | {type: 'iban'; owner: string; iban: string}
   | {type: 'bank'; account: string}
   | {type: 'paypal'; email: string}
 
-type Test_PaymentMethod = Equals<PaymentMethodExpected, PaymentMethod> 
+export type Test_PaymentMethod = Equals<PaymentMethod_Expected, PaymentMethod>

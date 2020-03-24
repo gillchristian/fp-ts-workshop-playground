@@ -1,3 +1,5 @@
+// This is available as Markdown at
+// https://gist.github.com/gillchristian/272eacdee75049831f09498c9bec4e2a
 interface Box<Data> {
   data: Data
 }
@@ -16,33 +18,33 @@ const one = of(1)
 
 // /////////////////////////////////////////////////////////////////////////////
 
-// as with RemoteData we can define a way to transform what's inside the Box without extracting
+// As with RemoteData we can define a way to transform what's inside the Box without extracting
 //
-// we'll call it 'map' as we want to _map_ the contents from some type A to some type B
+// We'll call it 'map' as we want to _map_ the contents from some type A to some type B
 //
-// we are familiar with map from using Array.map
+// We are familiar with map from using Array.map
 //
-// But also Promise.then is used as a means of mapping
+// But also 'Promise.then' is used as a means of mapping
 //
 // getUser(id).then((data) => data.user)
 //
-// there we are mapping from Promise<{ data: User }> to Promise<User>
+// There we are mapping from Promise<{ data: User }> to Promise<User>
 //                           Promise<A>              to Promise<B>
 
 // map :: (a -> b) -> Box a -> Box b
-const map = <Data = unknown, Result = unknown>(f: (data: Data) => Result) => (
-  box: Box<Data>,
-): Box<Result> => of(f(box.data))
+const map = <A = unknown, B = unknown>(f: (data: A) => B) => (
+  box: Box<A>,
+): Box<B> => of(f(box.data))
 
 const m1 = map((s: string) => s.length)(hello)
 const m2 = map((n: number) => n + 2)(one)
 
 console.log("map((s: string) => s.length)(Box('hello'))", show(m1))
-console.log('map((n: number) => n + 2)(Box(1))', show(m2))
+console.log('map((n: number) => n + 2)(Box(1))         ', show(m2))
 
 // /////////////////////////////////////////////////////////////////////////////
 
-// map wouldn't work if we have a function that returns a Box:
+// what if we want to map a function that returns a Box?
 
 // boxedLength :: string -> Box number
 const boxedLength = (s: string) => of(s.length)
@@ -54,8 +56,13 @@ const boxedInc = (n: number) => of(n + 1)
 const nested1: Box<Box<number>> = map(boxedLength)(hello)
 const nested2: Box<Box<number>> = map(boxedInc)(one)
 
-// similar to map, there's 'chain' this one lets us _chain_ the operations
-// we also use Promise.then to 'chain' operations:
+// console.log('\n---\n')
+// console.log('nested1', nested1)
+// console.log('nested2', nested2)
+
+// Similar to map, there's 'chain' this one lets us _chain_ the operations
+//
+// We also use 'Promise.then' to _chain_ operations:
 //
 // fetchUser(id)
 //   .then(({ followers }) => fetchFollowers(followers))
@@ -70,7 +77,6 @@ const chain = <Data = unknown, Result = unknown>(
 const c1 = chain(boxedLength)(hello)
 const c2 = chain(boxedInc)(one)
 
-console.log('\n---\n')
-
-console.log("chain(boxedLength)(Box('hello')):", show(c1))
-console.log('chain(boxedInc)(Box(1)):', show(c2))
+// console.log('\n---\n')
+// console.log("chain(boxedLength)(Box('hello')):", show(c1))
+// console.log('chain(boxedInc)(Box(1)):         ', show(c2))
