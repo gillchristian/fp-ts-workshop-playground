@@ -16,6 +16,7 @@ import {
   Either,
 } from 'fp-ts/lib/Either'
 
+import * as utils from './utils'
 import {Expiry, PaymentMethod} from './04.io-ts'
 
 // Error handling in a functional way.
@@ -165,68 +166,75 @@ export const eitherLowRandom = tryCatch(
 // 1. Implement a version of parseInt that returns a right on valid number
 //    and a left if the result is not a number
 //    Answer is in the fp-ts docs, don't cheat ;)
-const safeParseInt = (_: unknown): Either<string, number> =>
-  left('not a number')
 
-assert.deepEqual(safeParseInt('123'), right(123))
-assert.deepEqual(safeParseInt('foo'), left('not a number'))
+utils.xtest('Exercise 1: safeParseInt', () => {
+  const safeParseInt = (_: unknown): Either<string, number> =>
+    left('not a number')
+
+  assert.deepEqual(safeParseInt('123'), right(123))
+  assert.deepEqual(safeParseInt('foo'), left('not a number'))
+})
 
 // 2. Implement a safe version of JSON.stringify that doesn't throw on cyclick
 //    values but instead returns a left
 //    NOTE: fp-ts/lib/Either already provides such function, this is for learning purposes ;)
-
-const stringifyJSON = (_: unknown): Either<string, string> =>
-  left('cannot stringify')
-
 const failsToStringify = {foo: this} // <- this throws on JSON.stringify
 
-assert.deepEqual(stringifyJSON({}), right('{}'))
-assert.deepEqual(stringifyJSON(failsToStringify), left('cannot stringify'))
+utils.xtest('Exercise 2: stringifyJSON', () => {
+  const stringifyJSON = (_: unknown): Either<string, string> =>
+    left('cannot stringify')
+
+  assert.deepEqual(stringifyJSON({}), right('{}'))
+  assert.deepEqual(stringifyJSON(failsToStringify), left('cannot stringify'))
+})
 
 // 3. Using the decoder from the previous 'chapter', implement a function that:
 //    - safely parses JSON
 //    - decodes the result as PaymentMethod
 //    - validates the expiry date (with isValidExpiry)
 
-export const isValidExpiry = (expiry: Expiry): Either<Error, Expiry> => {
-  const currentYear = new Date().getFullYear()
-  if (expiry.year < currentYear) {
-    return left(new Error('year cannot be in the past'))
+utils.xtest("Exercise 3: validate PaymentMethod's", () => {
+  const isValidExpiry = (expiry: Expiry): Either<Error, Expiry> => {
+    const currentYear = new Date().getFullYear()
+    if (expiry.year < currentYear) {
+      return left(new Error('year cannot be in the past'))
+    }
+    if (expiry.year > currentYear + 10) {
+      return left(new Error('all credit cards expire in less than 10 years'))
+    }
+    if (expiry.month < 1 || expiry.month > 12) {
+      return left(new Error('month should be between 1 & 12'))
+    }
+    return right(expiry)
   }
-  if (expiry.year > currentYear + 10) {
-    return left(new Error('all credit cards expire in less than 10 years'))
+  isValidExpiry
+
+  const validateInput = (_input: string): Either<Error, PaymentMethod> =>
+    left(new Error('not implement'))
+
+  const input = {
+    invalidJSON:
+      '{type":"credit_card","owner":"John Don","number":"347954046610242","expiry":{"month":1,"year":2023}}',
+    invalidPaymentMethod:
+      '{"type":"credit_crd","owner":"John Don","number":"347954046610242","expiry":{"month":1,"year":2023}}',
+    invalidExpiry:
+      '{"type":"credit_card","owner":"John Don","number":"347954046610242","expiry":{"month":13,"year":2023}}',
+    validCreditCard:
+      '{"type":"credit_card","owner":"John Don","number":"347954046610242","expiry":{"month":1,"year":2023}}',
+    validPaypal: '{"type":"paypal","email":"foo@bar.com"}',
   }
-  if (expiry.month < 1 || expiry.month > 12) {
-    return left(new Error('month should be between 1 & 12'))
+
+  const results = {
+    invalidJSON: validateInput(input.invalidJSON),
+    invalidPaymentMethod: validateInput(input.invalidPaymentMethod),
+    invalidExpiry: validateInput(input.invalidExpiry),
+    validCreditCard: validateInput(input.validCreditCard),
+    validPaypal: validateInput(input.validPaypal),
   }
-  return right(expiry)
-}
 
-const validateInput = (_input: string): Either<Error, PaymentMethod> =>
-  left(new Error('not implement'))
-
-const input = {
-  invalidJSON:
-    '{type":"credit_card","owner":"John Don","number":"347954046610242","expiry":{"month":1,"year":2023}}',
-  invalidPaymentMethod:
-    '{"type":"credit_crd","owner":"John Don","number":"347954046610242","expiry":{"month":1,"year":2023}}',
-  invalidExpiry:
-    '{"type":"credit_card","owner":"John Don","number":"347954046610242","expiry":{"month":13,"year":2023}}',
-  validCreditCard:
-    '{"type":"credit_card","owner":"John Don","number":"347954046610242","expiry":{"month":1,"year":2023}}',
-  validPaypal: '{"type":"paypal","email":"foo@bar.com"}',
-}
-
-const results = {
-  invalidJSON: validateInput(input.invalidJSON),
-  invalidPaymentMethod: validateInput(input.invalidPaymentMethod),
-  invalidExpiry: validateInput(input.invalidExpiry),
-  validCreditCard: validateInput(input.validCreditCard),
-  validPaypal: validateInput(input.validPaypal),
-}
-
-assert.deepEqual(isLeft(results.invalidJSON), true)
-assert.deepEqual(isLeft(results.invalidPaymentMethod), true)
-assert.deepEqual(isLeft(results.invalidExpiry), true)
-assert.deepEqual(isLeft(results.validCreditCard), false)
-assert.deepEqual(isLeft(results.validPaypal), false)
+  assert.deepEqual(isLeft(results.invalidJSON), true)
+  assert.deepEqual(isLeft(results.invalidPaymentMethod), true)
+  assert.deepEqual(isLeft(results.invalidExpiry), true)
+  assert.deepEqual(isLeft(results.validCreditCard), false)
+  assert.deepEqual(isLeft(results.validPaypal), false)
+})

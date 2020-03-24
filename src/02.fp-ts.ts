@@ -12,12 +12,14 @@ import {
 import {pipe} from 'fp-ts/lib/pipeable'
 import {map, reduce, filter} from 'fp-ts/lib/Array'
 
-const toLower = (str: string) => str.toLowerCase()
-const exclaim: Endomorphism<string> = str => `${str}!`
+import * as utils from './utils'
 
-const isExclamation: Predicate<string> = str => /!$/.test(str)
+export const toLower = (str: string) => str.toLowerCase()
+export const exclaim: Endomorphism<string> = str => `${str}!`
 
-const alwaysNull: Lazy<null> = () => null
+export const isExclamation: Predicate<string> = str => /!$/.test(str)
+
+export const alwaysNull: Lazy<null> = () => null
 
 const isSrgjan: Refinement<string, 'Srgjan'> = (str): str is 'Srgjan' =>
   str === 'Srgjan'
@@ -25,7 +27,7 @@ const isSrgjan: Refinement<string, 'Srgjan'> = (str): str is 'Srgjan' =>
 // /////////////////////////////////////////////////////////////////////////////
 
 const name = 'Srgjan'
-const nameConst = isSrgjan(name) ? name : 'Srgjan'
+export const nameConst = isSrgjan(name) ? name : 'Srgjan'
 
 interface User {
   name: string
@@ -36,7 +38,7 @@ interface User {
   registered: string
 }
 
-const userFormatRegistered = (user: User) =>
+export const userFormatRegistered = (user: User) =>
   new Date(user.registered).toLocaleDateString('en-gb', {
     weekday: 'long',
     year: 'numeric',
@@ -118,90 +120,88 @@ const makeEmail = ({name, lastName}: {name: string; lastName: string}) =>
 
 // 1.
 
-const isAdmin = ({admin}: User) => admin
+utils.test('Exercise 1: Catawiki users with email', () => {
+  const isAdmin = ({admin}: User) => admin
 
-const makeCatawikiUser = (user: User): CatawikiUser => ({
-  ...user,
-  email: makeEmail(user),
+  const makeCatawikiUser = (user: User): CatawikiUser => ({
+    ...user,
+    email: makeEmail(user),
+  })
+
+  const onePipe = (users: User[]) =>
+    pipe(users, filter(isAdmin), map(makeCatawikiUser))
+  const one = flow(filter(isAdmin), map(makeCatawikiUser))
+
+  const oneSolution = [
+    {
+      name: 'John',
+      lastName: 'Doe',
+      admin: true,
+      lots: 0,
+      isPro: false,
+      registered: '2010-02-21',
+      email: 'j.doe@catawiki',
+    },
+    {
+      name: 'Wanda',
+      lastName: 'Vang',
+      admin: true,
+      lots: 3,
+      isPro: false,
+      registered: '2019-08-14',
+      email: 'w.vang@catawiki',
+    },
+  ]
+  assert.deepEqual(one(users), oneSolution)
+  assert.deepEqual(onePipe(users), oneSolution)
 })
-
-const onePipe = (users: User[]) =>
-  pipe(users, filter(isAdmin), map(makeCatawikiUser))
-const one = flow(filter(isAdmin), map(makeCatawikiUser))
-
-console.log('Exercise 1) -> Catawiki users with email')
-
-const oneSolution = [
-  {
-    name: 'John',
-    lastName: 'Doe',
-    admin: true,
-    lots: 0,
-    isPro: false,
-    registered: '2010-02-21',
-    email: 'j.doe@catawiki',
-  },
-  {
-    name: 'Wanda',
-    lastName: 'Vang',
-    admin: true,
-    lots: 3,
-    isPro: false,
-    registered: '2019-08-14',
-    email: 'w.vang@catawiki',
-  },
-]
-assert.deepEqual(one(users), oneSolution)
-assert.deepEqual(onePipe(users), oneSolution)
 
 // 2.
 
-const lots = ({lots}: {lots: number}) => lots
+utils.test('Exercise 2: lots count', () => {
+  const lots = ({lots}: {lots: number}) => lots
 
-const twoPipe = (users: User[]) => pipe(users, map(lots), reduce(0, add))
-const two = flow(map(lots), reduce(0, add))
+  const twoPipe = (users: User[]) => pipe(users, map(lots), reduce(0, add))
+  const two = flow(map(lots), reduce(0, add))
 
-console.log('Exercise 2) -> lots count')
-
-assert.strictEqual(two(users), 15)
-assert.strictEqual(twoPipe(users), 15)
+  assert.strictEqual(two(users), 15)
+  assert.strictEqual(twoPipe(users), 15)
+})
 
 // 3.
 
-const formatRegistrationDate = ({registered, ...rest}: User) => ({
-  ...rest,
-  registered: toLocaleDateString(registered),
+utils.test('Exercise 3: Users profile description', () => {
+  const formatRegistrationDate = ({registered, ...rest}: User) => ({
+    ...rest,
+    registered: toLocaleDateString(registered),
+  })
+
+  const profileIntoParts = ({name, lastName, isPro, admin, registered}: User) =>
+    admin
+      ? [name, lastName, '(Catawiki employee). Joined', registered]
+      : isPro
+      ? [name, lastName, '(pro seller). Joined', registered]
+      : [name, `${lastName}.`, 'Joined', registered]
+
+  const userDescriptionPipe = (user: User) =>
+    pipe(user, formatRegistrationDate, profileIntoParts, join(' '))
+
+  const userDescription = flow(
+    formatRegistrationDate,
+    profileIntoParts,
+    join(' '),
+  )
+
+  const threePipe = map(userDescriptionPipe)
+  const three = map(userDescription)
+
+  const threeSolution = [
+    'John Doe (Catawiki employee). Joined Sunday, February 21, 2010',
+    'Charles Easton (pro seller). Joined Monday, June 18, 2018',
+    'Kimora Simmons. Joined Friday, January 3, 2020',
+    'Wanda Vang (Catawiki employee). Joined Wednesday, August 14, 2019',
+  ]
+
+  assert.deepEqual(threePipe(users), threeSolution)
+  assert.deepEqual(three(users), threeSolution)
 })
-
-const profileIntoParts = ({name, lastName, isPro, admin, registered}: User) =>
-  admin
-    ? [name, lastName, '(Catawiki employee). Joined', registered]
-    : isPro
-    ? [name, lastName, '(pro seller). Joined', registered]
-    : [name, `${lastName}.`, 'Joined', registered]
-
-const userDescriptionPipe = (user: User) =>
-  pipe(user, formatRegistrationDate, profileIntoParts, join(' '))
-
-const userDescription = flow(
-  formatRegistrationDate,
-  profileIntoParts,
-  join(' '),
-)
-
-const threePipe = map(userDescriptionPipe)
-const three = map(userDescription)
-
-console.log('Exercise 3) -> Users profile description')
-
-const threeSolution = [
-  'John Doe (Catawiki employee). Joined Sunday, February 21, 2010',
-  'Charles Easton (pro seller). Joined Monday, June 18, 2018',
-  'Kimora Simmons. Joined Friday, January 3, 2020',
-  'Wanda Vang (Catawiki employee). Joined Wednesday, August 14, 2019',
-]
-
-assert.deepEqual(threePipe(users), threeSolution)
-assert.deepEqual(three(users), threeSolution)
-
-console.log('All pass!!!')

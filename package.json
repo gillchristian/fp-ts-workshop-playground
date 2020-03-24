@@ -8,6 +8,7 @@
   "dependencies": {
     "@types/assert-plus": "^1.0.4",
     "assert-plus": "^1.0.0",
+    "chalk": "^3.0.0",
     "fp-ts": "^2.5.0",
     "fp-ts-contrib": "^0.1.12",
     "hyper-ts": "^0.5.3",
@@ -19,5 +20,8 @@
     "pretty-quick": "^2.0.1",
     "ts-node": "^8.6.2",
     "typescript": "^3.7.5"
+  },
+  "devDependencies": {
+    "@types/chalk": "^2.2.0"
   }
 }
