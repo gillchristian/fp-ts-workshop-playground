@@ -146,8 +146,8 @@ interface Feedback_Expected {
 export type Test_Feedback = Equals<Feedback_Expected, Feedback>
 
 // 4. Implement the PaymentMethod type (to match PaymentMethod_Expected) as an io-ts codec
-const PaymentMethod = t.interface({})
-type PaymentMethod = t.TypeOf<typeof PaymentMethod>
+export const PaymentMethod = t.interface({})
+export type PaymentMethod = t.TypeOf<typeof PaymentMethod>
 
 export interface Expiry {
   month: number // should be 0 | ... | 11 but for brevity we use number

@@ -51,15 +51,15 @@ const martha = {name: 'Martha'}
 
 // Create Either values
 
-const userA = left(error)
-const userB = right(martha)
+const userA: Either<Error, User> = left(error)
+const userB: Either<Error, User> = right(martha)
 
 // map
 //
 // allows to transform the right value
 
-map(getUserName)(userA) // left(error)
-map(getUserName)(userB) // right('martha')
+export const nameA = map(getUserName)(userA) // left(error)
+export const nameB = map(getUserName)(userB) // right('martha')
 
 // chain
 //
@@ -73,9 +73,9 @@ const validateUser = (payload: unknown): Either<Error, User> =>
   isUser(payload) ? right(payload) : left(new Error('invalid payload'))
 
 // see the resulting types when using map & chain
-const x = pipe('{"name": "Mark"}', parse, map(validateUser))
+export const x = pipe('{"name": "Mark"}', parse, map(validateUser))
 
-const y = pipe('{"name": "Mark"}', parse, chain(validateUser))
+export const y = pipe('{"name": "Mark"}', parse, chain(validateUser))
 
 // mapLeft
 //
@@ -87,9 +87,9 @@ const errorToMessage = mapLeft((e: Error) => e.message)
 //
 // extract values out of Either providing a default to use in case of left
 
-const extract = getOrElse(() => ({name: 'John Doe'}))
+const extracted = getOrElse(() => ({name: 'John Doe'}))(y)
 
-console.log(extract(y))
+console.log(extracted)
 
 // fold
 //
@@ -106,6 +106,18 @@ pipe(
       console.log('User name is:', user.name)
     },
   ),
+)
+
+// we can also return:
+
+pipe(
+  y,
+  errorToMessage,
+  fold(
+    msg => 'The error was: ' + msg,
+    user => 'User name is: ' + user.name,
+  ),
+  msg => console.log(msg),
 )
 
 // fromNullable
@@ -126,13 +138,16 @@ const validateUserByPredicate = fromPredicate(
   () => new Error('invalid payload'),
 )
 
+validateUserByPredicate(null) // left('invalid payload')
+validateUserByPredicate({name: 'Guy'}) // right({ name: 'Guy' })
+
 // tryCatch
 //
 // runs operation that might throw
 // returns right of result if it doesn't
 // catches error and returns left if it does
 
-const eitherLowRandom = tryCatch(
+export const eitherLowRandom = tryCatch(
   () => {
     const rand = Math.random()
     if (rand > 0.5) {
@@ -158,13 +173,12 @@ assert.deepEqual(safeParseInt('foo'), left('not a number'))
 
 // 2. Implement a safe version of JSON.stringify that doesn't throw on cyclick
 //    values but instead returns a left
-//    NOTE: fp-ts/lib/Either already provides such function, this is for
-//    learning purposes :)
+//    NOTE: fp-ts/lib/Either already provides such function, this is for learning purposes ;)
 
 const stringifyJSON = (_: unknown): Either<string, string> =>
   left('cannot stringify')
 
-const failsToStringify = {foo: this}
+const failsToStringify = {foo: this} // <- this throws on JSON.stringify
 
 assert.deepEqual(stringifyJSON({}), right('{}'))
 assert.deepEqual(stringifyJSON(failsToStringify), left('cannot stringify'))
@@ -174,7 +188,7 @@ assert.deepEqual(stringifyJSON(failsToStringify), left('cannot stringify'))
 //    - decodes the result as PaymentMethod
 //    - validates the expiry date (with isValidExpiry)
 
-const isValidExpiry = (expiry: Expiry): Either<Error, Expiry> => {
+export const isValidExpiry = (expiry: Expiry): Either<Error, Expiry> => {
   const currentYear = new Date().getFullYear()
   if (expiry.year < currentYear) {
     return left(new Error('year cannot be in the past'))
