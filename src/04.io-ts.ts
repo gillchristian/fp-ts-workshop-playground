@@ -61,7 +61,13 @@ export type Test_WithName = Equals<WithName_Expected, WithName>
 // $ yarn ts-node src/04.io-ts
 
 // 1. Implement the User (to match User_Expected) interface as an io-ts codec
-const User = t.interface({})
+const User = t.interface({
+  id: t.number,
+  name: t.string,
+  lastName: t.string,
+  age: t.number,
+  admin: t.boolean,
+})
 type User = t.TypeOf<typeof User>
 
 interface User_Expected {
@@ -75,8 +81,21 @@ interface User_Expected {
 export type Test_User = Equals<User_Expected, User>
 
 // 2. Implement the Lot (to match Lot_Expected) interface as an io-ts codec
+const Auction = t.interface({
+  id: t.union([t.string, t.number]),
+  title: t.string,
+  experts: t.array(User),
+})
 
-const Lot = t.interface({})
+export const Lot = t.intersection([
+  t.interface({
+    id: t.union([t.string, t.number]),
+    title: t.string,
+    category: t.number,
+    auction: Auction,
+  }),
+  t.partial({thumbnail: t.string}),
+])
 type Lot = t.TypeOf<typeof Lot>
 
 interface Auction {
@@ -129,7 +148,15 @@ export type Test_Lot = Equals<Lot_Expected, Lot>
 // Cons: much more verbose, result is an interface (not a problem tho)
 
 // 3. Implement the Feedback (to match Feedback_Expected) interface as an io-ts codec
-const Feedback = t.interface({})
+const Feedback = t.intersection([
+  t.interface({
+    orderReference: t.union([t.string, t.number]),
+    seller: User,
+    buyer: User,
+    type: t.keyof({positive: null, neutral: null, negative: null}),
+  }),
+  t.partial({body: t.string, response: t.interface({body: t.string})}),
+])
 type Feedback = t.TypeOf<typeof Feedback>
 
 interface Feedback_Expected {
@@ -146,7 +173,27 @@ interface Feedback_Expected {
 export type Test_Feedback = Equals<Feedback_Expected, Feedback>
 
 // 4. Implement the PaymentMethod type (to match PaymentMethod_Expected) as an io-ts codec
-export const PaymentMethod = t.interface({})
+export const PaymentMethod = t.union([
+  t.interface({
+    type: t.literal('credit_card'),
+    owner: t.string,
+    number: t.string,
+    expiry: t.interface({month: t.number, year: t.number}),
+  }),
+  t.interface({
+    type: t.literal('iban'),
+    owner: t.string,
+    iban: t.string,
+  }),
+  t.interface({
+    type: t.literal('bank'),
+    account: t.string,
+  }),
+  t.interface({
+    type: t.literal('paypal'),
+    email: t.string,
+  }),
+])
 export type PaymentMethod = t.TypeOf<typeof PaymentMethod>
 
 export interface Expiry {
