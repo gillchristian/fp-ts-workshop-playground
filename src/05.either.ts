@@ -1,5 +1,7 @@
 import * as assert from 'assert-plus'
+import * as t from 'io-ts'
 import {pipe} from 'fp-ts/lib/pipeable'
+import {flow} from 'fp-ts/lib/function'
 import {
   isLeft,
   right,
@@ -14,6 +16,7 @@ import {
   parseJSON,
   mapLeft,
   Either,
+  toError,
 } from 'fp-ts/lib/Either'
 
 import * as utils from './utils'
@@ -167,9 +170,12 @@ export const eitherLowRandom = tryCatch(
 //    and a left if the result is not a number
 //    Answer is in the fp-ts docs, don't cheat ;)
 
-utils.xtest('Exercise 1: safeParseInt', () => {
-  const safeParseInt = (_: unknown): Either<string, number> =>
-    left('not a number')
+utils.test('Exercise 1: safeParseInt', () => {
+  const safeParseInt = (str: string): Either<string, number> => {
+    const n = parseInt(str, 10)
+
+    return Number.isNaN(n) ? left('not a number') : right(n)
+  }
 
   assert.deepEqual(safeParseInt('123'), right(123))
   assert.deepEqual(safeParseInt('foo'), left('not a number'))
@@ -178,11 +184,17 @@ utils.xtest('Exercise 1: safeParseInt', () => {
 // 2. Implement a safe version of JSON.stringify that doesn't throw on cyclick
 //    values but instead returns a left
 //    NOTE: fp-ts/lib/Either already provides such function, this is for learning purposes ;)
-const failsToStringify = {foo: this} // <- this throws on JSON.stringify
+class Foo {
+  foo = this
+}
+const failsToStringify = {foo: new Foo()} // <- this throws on JSON.stringify
 
-utils.xtest('Exercise 2: stringifyJSON', () => {
-  const stringifyJSON = (_: unknown): Either<string, string> =>
-    left('cannot stringify')
+utils.test('Exercise 2: stringifyJSON', () => {
+  const stringifyJSON = (v: unknown): Either<string, string> =>
+    tryCatch(
+      () => JSON.stringify(v),
+      () => 'cannot stringify',
+    )
 
   assert.deepEqual(stringifyJSON({}), right('{}'))
   assert.deepEqual(stringifyJSON(failsToStringify), left('cannot stringify'))
@@ -193,7 +205,7 @@ utils.xtest('Exercise 2: stringifyJSON', () => {
 //    - decodes the result as PaymentMethod
 //    - validates the expiry date (with isValidExpiry)
 
-utils.xtest("Exercise 3: validate PaymentMethod's", () => {
+utils.test("Exercise 3: validate PaymentMethod's", () => {
   const isValidExpiry = (expiry: Expiry): Either<Error, Expiry> => {
     const currentYear = new Date().getFullYear()
     if (expiry.year < currentYear) {
@@ -207,10 +219,28 @@ utils.xtest("Exercise 3: validate PaymentMethod's", () => {
     }
     return right(expiry)
   }
-  isValidExpiry
 
-  const validateInput = (_input: string): Either<Error, PaymentMethod> =>
-    left(new Error('not implement'))
+  const decodingErrorsToError = (errors: t.Errors) =>
+    new Error(`Found ${errors.length} while decoding`)
+
+  const validateExpiry = (
+    paymentMethod: PaymentMethod,
+  ): Either<Error, PaymentMethod> =>
+    paymentMethod.type === 'credit_card'
+      ? pipe(
+          paymentMethod.expiry, // Expiry
+          isValidExpiry, // Either<Error, Expiry>
+          map(() => paymentMethod), // Either<Error, PaymentMethod>
+        )
+      : right(paymentMethod) // Either<never, PaymentMethod>
+
+  const validateInput = (input: string): Either<Error, PaymentMethod> =>
+    pipe(
+      input,
+      s => parseJSON(s, toError), // Either<Error, unknown>
+      chain(flow(PaymentMethod.decode, mapLeft(decodingErrorsToError))), // Either<Error, PaymentMethod>
+      chain(validateExpiry), // Either<Error, PaymentMethod>
+    )
 
   const input = {
     invalidJSON:
@@ -232,9 +262,11 @@ utils.xtest("Exercise 3: validate PaymentMethod's", () => {
     validPaypal: validateInput(input.validPaypal),
   }
 
+  // invalid ones
   assert.deepEqual(isLeft(results.invalidJSON), true)
   assert.deepEqual(isLeft(results.invalidPaymentMethod), true)
   assert.deepEqual(isLeft(results.invalidExpiry), true)
+  // valid ones
   assert.deepEqual(isLeft(results.validCreditCard), false)
   assert.deepEqual(isLeft(results.validPaypal), false)
 })
